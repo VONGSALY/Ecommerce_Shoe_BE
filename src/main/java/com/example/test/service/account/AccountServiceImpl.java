@@ -183,11 +183,18 @@ public class AccountServiceImpl implements AccountService {
         if (Boolean.TRUE.equals(accountRepository.existsByUsername(accountCreateRequest.getUsername()))) {
             throw new RuntimeException("Username đã tồn tại");
         }
-        if (Boolean.TRUE.equals(accountRepository.existsByUsername(accountCreateRequest.getEmail()))){
+        if (Boolean.TRUE.equals(accountDetailRepository.existsByEmail(accountCreateRequest.getEmail()))){
             throw new RuntimeException("Email đã tồn tại");
         }
         Account account = accountMapper.getEntityFromRequest(accountCreateRequest);
-        account.setRole(RoleEnums.CUSTOMER.name());
+        // Xác định role: nếu admin truyền "ADMIN" thì dùng ADMIN, còn lại mặc định CUSTOMER
+        String roleName = accountCreateRequest.getRoleName();
+        if (RoleEnums.ADMIN.name().equals(roleName)) {
+            account.setRole(RoleEnums.ADMIN.name());
+        } else {
+            account.setRole(RoleEnums.CUSTOMER.name());
+        }
+        account.setPassword(BCrypt.hashpw(accountCreateRequest.getPassword(), BCrypt.gensalt()));
         account.setIsActive(Boolean.TRUE);
         account.setCreateDate(LocalDate.now());
         account.setModifyDate(LocalDate.now());

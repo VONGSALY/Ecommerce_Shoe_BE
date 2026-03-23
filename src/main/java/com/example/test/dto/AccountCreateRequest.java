@@ -38,4 +38,5 @@ public class AccountCreateRequest {
     @JsonFormat(shape=JsonFormat.Shape.STRING, pattern="yyyy-MM-dd")
     private LocalDate birthdate;
     private Boolean isActive;
+    private String roleName;
 }
