@@ -92,16 +92,31 @@ public class AccountServiceImpl implements AccountService {
     }
     @Override
     public TokenAndRole login(LoginRequest loginRequest) {
-        Account userEntity = accountRepository.findByUsernameAndIsActive(loginRequest.getUsername(), Boolean.TRUE);
-        if (Objects.isNull(userEntity) || Boolean.FALSE.equals(userEntity.getIsActive())){
-            throw new RuntimeException(CodeAndMessage.ERR4);
+        String username = loginRequest.getUsername().trim();
+        System.out.println("Processing login for user: [" + username + "]");
+        Account userEntity = accountRepository.findByUsernameAndIsActive(username, Boolean.TRUE);
+        
+        if (Objects.isNull(userEntity)) {
+            System.out.println("Login failed: User [" + username + "] not found or not active.");
+            throw new RuntimeException(CodeAndMessage.ERR2); // "Tài khoản không tồn tại!"
         }
+        
+        if (Boolean.FALSE.equals(userEntity.getIsActive())) {
+            System.out.println("Login failed: User [" + username + "] is inactive.");
+            throw new RuntimeException(CodeAndMessage.ERR4); // "Không có quyền truy cập "
+        }
+
         String currentHashedPassword = userEntity.getPassword();
         AccountDetail accountDetail = accountDetailRepository.findByAccountId(userEntity.getId());
-        if (BCrypt.checkpw(loginRequest.getPassword(), currentHashedPassword)){
+        String fullName = (accountDetail != null) ? accountDetail.getFullName() : userEntity.getUsername();
+
+        if (BCrypt.checkpw(loginRequest.getPassword(), currentHashedPassword)) {
+            System.out.println("Login success for user: [" + username + "]");
             String accessToken = TokenHelper.generateToken(userEntity);
-            return new TokenAndRole(accessToken, userEntity.getRole(), accountDetail.getFullName());
+            return new TokenAndRole(accessToken, userEntity.getRole(), fullName);
         }
+        
+        System.out.println("Login failed: Wrong password for user: [" + username + "]");
         throw new RuntimeException(CodeAndMessage.ERR1);
     }
 
